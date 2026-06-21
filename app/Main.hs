@@ -1,83 +1,74 @@
 module Main where
 
-import System.IO
+import Data.Char (isDigit, isSpace)
 
-data State = State
-    { history :: [String]
-    }
+data Token
+    = Number Double
+    | Plus
+    | Minus
+    | Times
+    | Divide
+    | LParen  -- Left Paranthesis
+    | RParen  -- Right Paranthesis
+    deriving (Show)
+
+lexer :: String -> [Token]
+lexer [] = []
+
+-- Ignore spaces
+lexer (x:xs)
+    | isSpace x =
+        lexer xs
+
+-- Operators
+lexer ('+':xs) =
+    Plus : lexer xs
+
+lexer ('-':xs) =
+    Minus : lexer xs
+
+lexer ('*':xs) =
+    Times : lexer xs
+
+lexer ('/':xs) =
+    Divide : lexer xs
+
+lexer ('(':xs) =
+    LParen : lexer xs
+
+lexer (')':xs) =
+    RParen : lexer xs
+
+-- Numbers
+lexer (x:xs)
+    | isDigit x =
+        let
+            digits =
+                x : takeWhile (\c -> isDigit c || c == '.') xs
+
+            rest =
+                dropWhile (\c -> isDigit c || c == '.') xs
+        in
+            Number (read digits) : lexer rest
+
+-- Unknown character
+lexer (x:_) =
+    error ("Unknown character: " ++ [x])
+
+repl :: IO ()
+repl = do
+    putStr "integra> "
+    line <- getLine
+
+    if line == ":quit"
+        then putStrLn "Goodbye."
+        else do
+            print (lexer line)
+            repl
 
 main :: IO ()
 main = do
-    putStrLn "╔════════════════════╗"
-    putStrLn "║   Integra v0.1     ║"
-    putStrLn "║   Type :help       ║"
-    putStrLn "╚════════════════════╝"
-    repl (State [])
-
-repl :: State -> IO ()
-repl st = do
-    putStr "integra> "
-    hFlush stdout
-
-    input <- getLine
-
-    case input of
-        ":quit" -> do
-            putStrLn "Goodbye."
-
-        ":help" -> do
-            putStrLn ""
-            putStrLn "Commands:"
-            putStrLn "  :help      Show help"
-            putStrLn "  :history   Show history"
-            putStrLn "  :clear     Clear history"
-            putStrLn "  :quit      Exit Integra"
-            putStrLn ""
-            repl st
-
-        ":history" -> do
-            putStrLn ""
-            mapM_
-                (\(i, cmd) -> putStrLn (show i ++ " | " ++ cmd))
-                (zip [1 :: Int ..] (history st))
-            putStrLn ""
-            repl st
-
-        ":clear" -> do
-            putStrLn "History cleared."
-            repl (State [])
-
-        _ -> do
-            case eval input of
-                Just result ->
-                    putStrLn (show result)
-                Nothing ->
-                    putStrLn "Invalid expression."
-
-            let newState =
-                    st
-                        { history = history st ++ [input]
-                        }
-
-            repl newState
-
-eval :: String -> Maybe Double
-eval str =
-    case words str of
-        [a] ->
-            Just (read a)
-
-        [a, "+", b] ->
-            Just (read a + read b)
-
-        [a, "-", b] ->
-            Just (read a - read b)
-
-        [a, "*", b] ->
-            Just (read a * read b)
-
-        [a, "/", b] ->
-            Just (read a / read b)
-
-        _ ->
-            Nothing
+    putStrLn "Integra v0.2"
+    putStrLn "With Lexer Demo"
+    putStrLn "Type :quit to exit"
+    repl
