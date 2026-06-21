@@ -8,16 +8,22 @@ A terminal-based REPL calculator with arithmetic, trigonometry, calculus, and al
 cabal run
 ```
 
+You'll see the `>integra` prompt. Type `:help` for all commands.
+
 ## Features
 
 ### Expressions
-| Category     | Examples                          |
-|--------------|-----------------------------------|
-| Arithmetic   | `2 + 3`, `4 * 5`, `10 / 2`, `2^3` |
-| Trigonometry | `sin(x)`, `cos(x)`, `tan(x)`      |
-| Log / Exp    | `log(x)`, `exp(x)`, `sqrt(x)`     |
-| Constants    | `pi`, `e`                         |
-| Variable     | `x`                               |
+| Category       | Examples                                              |
+|----------------|-------------------------------------------------------|
+| Arithmetic     | `2 + 3`, `4 * 5`, `10 / 2`, `2^3`                     |
+| Trig           | `sin(x)`, `cos(x)`, `tan(x)`                          |
+| Inverse trig   | `asin(x)`, `acos(x)`, `atan(x)`                       |
+| Hyperbolic     | `sinh(x)`, `cosh(x)`, `tanh(x)`                       |
+| Log / Exp      | `log(x)`, `exp(x)`, `sqrt(x)`                         |
+| Rounding       | `floor(x)`, `ceil(x)`, `round(x)`                     |
+| Absolute value | `abs(x)`                                              |
+| Constants      | `pi`, `e`                                             |
+| Variables      | `x`, `ans` (last computed result)                     |
 
 Operator precedence: `^` (right-assoc) > `*` `/` > `+` `-`.
 
@@ -39,6 +45,12 @@ Operator precedence: `^` (right-assoc) > `*` `/` > `+` `-`.
 ### Calculus (numerical)
 - **Derivative**: central difference method with `h = 1e-8`
 - **Integral**: Simpson's rule with 1000 subdivisions
+
+### REPL features
+- Line editing with history (up/down arrows)
+- Tab completion for commands (`:h` + Tab → `:help`)
+- `ans` variable stores the last result
+- Error messages for invalid input (no crashes)
 
 ## Clean
 

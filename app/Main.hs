@@ -1,223 +1,60 @@
 module Main where
 
-import Data.Char (isDigit, isSpace, isAlpha)
-import Data.List (isPrefixOf, tails, stripPrefix)
-import Control.Exception (catch, SomeException)
+import Integra.Token (lexer)
+import Integra.Parser (parse)
+import Integra.Evaluator (eval, evalWithX)
+import Integra.Numerical (derivative, integral)
+import Integra.Solver (solveLinear, solveQuadratic)
+
+import Data.Char (isSpace)
+import Data.List (isPrefixOf, stripPrefix, tails)
+import Control.DeepSeq (force)
+import Control.Exception (try, evaluate, SomeException)
+import Control.Monad.IO.Class (liftIO)
+import System.Console.Haskeline
+    ( Completion
+    , CompletionFunc
+    , InputT
+    , completeWord
+    , defaultSettings
+    , getInputLine
+    , outputStrLn
+    , runInputT
+    , setComplete
+    , simpleCompletion
+    )
 
 ------------------------------------------------------------
--- TOKENIZER
+-- HELP TEXT
 ------------------------------------------------------------
 
-data Token
-    = NumberTok Double
-    | PlusTok
-    | MinusTok
-    | TimesTok
-    | DivideTok
-    | PowerTok
-    | LParenTok
-    | RParenTok
-    | VarTok
-    | SinTok
-    | CosTok
-    | TanTok
-    | LogTok
-    | ExpTok
-    | SqrtTok
-    | PiTok
-    | ETok
-    deriving (Show, Eq)
-
-lexer :: String -> [Token]
-lexer [] = []
-lexer (x:xs) | isSpace x = lexer xs
-lexer ('+':xs) = PlusTok : lexer xs
-lexer ('-':xs) = MinusTok : lexer xs
-lexer ('*':xs) = TimesTok : lexer xs
-lexer ('/':xs) = DivideTok : lexer xs
-lexer ('^':xs) = PowerTok : lexer xs
-lexer ('(':xs) = LParenTok : lexer xs
-lexer (')':xs) = RParenTok : lexer xs
-lexer (x:xs) | isDigit x || x == '.' =
-    let (num, rest) = span (\c -> isDigit c || c == '.') (x:xs)
-    in NumberTok (read num) : lexer rest
-lexer (x:xs) | isAlpha x =
-    let (name, rest) = span isAlpha (x:xs)
-    in case name of
-        "sin"  -> SinTok  : lexer rest
-        "cos"  -> CosTok  : lexer rest
-        "tan"  -> TanTok  : lexer rest
-        "log"  -> LogTok  : lexer rest
-        "exp"  -> ExpTok  : lexer rest
-        "sqrt" -> SqrtTok : lexer rest
-        "pi"   -> PiTok   : lexer rest
-        "e"    -> ETok    : lexer rest
-        "x"    -> VarTok  : lexer rest
-        _      -> error ("Unknown identifier: " ++ name)
-lexer (x:_) = error ("Unknown character: " ++ [x])
+helpText :: String
+helpText = unlines
+    [ "Integra v0.3 - REPL Calculator"
+    , ""
+    , "Expressions:"
+    , "  Arithmetic:       2 + 3, 4 * 5, 10 / 2, 2^3"
+    , "  Trig:             sin(x), cos(x), tan(x)"
+    , "  Inverse trig:     asin(x), acos(x), atan(x)"
+    , "  Hyperbolic:       sinh(x), cosh(x), tanh(x)"
+    , "  Log/Exp/Sqrt:     log(x), exp(x), sqrt(x)"
+    , "  Integer rounding: floor(x), ceil(x), round(x)"
+    , "  Absolute value:   abs(x)"
+    , "  Constants:        pi, e"
+    , "  Variables:        x, ans (last result)"
+    , ""
+    , "Commands:"
+    , "  :help                          Show this help"
+    , "  :quit                          Exit the REPL"
+    , "  :solve <expr>                  Solve linear   <expr> = 0 for x"
+    , "  :solveq <expr>                 Solve quadratic <expr> = 0 for x"
+    , "  :deriv <expr> at <x>           Numerical derivative of <expr> at x"
+    , "  :integral <expr> from <a> to <b>"
+    , "                                 Numerical definite integral from a to b"
+    ]
 
 ------------------------------------------------------------
--- AST
-------------------------------------------------------------
-
-data Expr
-    = Num Double
-    | Add Expr Expr
-    | Sub Expr Expr
-    | Mul Expr Expr
-    | Div Expr Expr
-    | Pow Expr Expr
-    | Var
-    | SinE Expr
-    | CosE Expr
-    | TanE Expr
-    | LogE Expr
-    | ExpE Expr
-    | SqrtE Expr
-    | Pi
-    | E
-    deriving (Show)
-
-------------------------------------------------------------
--- PARSER  (precedence: +- < */ < ^ < unary/primary)
-------------------------------------------------------------
-
-parse :: [Token] -> Expr
-parse tokens = case parseAddSub tokens of
-    (e, []) -> e
-    (_, rest) -> error ("Unexpected tokens: " ++ show rest)
-
-parseAddSub :: [Token] -> (Expr, [Token])
-parseAddSub tokens =
-    case parseMulDiv tokens of
-        (left, rest) -> go left rest
-  where
-    go acc (PlusTok  : rest) = let (right, rest') = parseMulDiv rest in go (Add acc right) rest'
-    go acc (MinusTok : rest) = let (right, rest') = parseMulDiv rest in go (Sub acc right) rest'
-    go acc rest              = (acc, rest)
-
-parseMulDiv :: [Token] -> (Expr, [Token])
-parseMulDiv tokens =
-    case parsePower tokens of
-        (left, rest) -> go left rest
-  where
-    go acc (TimesTok  : rest) = let (right, rest') = parsePower rest in go (Mul acc right) rest'
-    go acc (DivideTok : rest) = let (right, rest') = parsePower rest in go (Div acc right) rest'
-    go acc rest               = (acc, rest)
-
-parsePower :: [Token] -> (Expr, [Token])
-parsePower tokens =
-    let (left, rest) = parseUnary tokens
-    in case rest of
-        PowerTok : rest' -> let (right, rest'') = parsePower rest' in (Pow left right, rest'')
-        _ -> (left, rest)
-
-parseUnary :: [Token] -> (Expr, [Token])
-parseUnary (MinusTok : rest) =
-    let (e, rest') = parseUnary rest
-    in (Sub (Num 0) e, rest')
-parseUnary tokens = parsePrimary tokens
-
-parsePrimary :: [Token] -> (Expr, [Token])
-parsePrimary (NumberTok n : rest) = (Num n, rest)
-parsePrimary (PiTok    : rest)    = (Pi, rest)
-parsePrimary (ETok     : rest)    = (E, rest)
-parsePrimary (VarTok   : rest)    = (Var, rest)
-
-parsePrimary (SinTok  : LParenTok : rest) = parseFn rest SinE
-parsePrimary (CosTok  : LParenTok : rest) = parseFn rest CosE
-parsePrimary (TanTok  : LParenTok : rest) = parseFn rest TanE
-parsePrimary (LogTok  : LParenTok : rest) = parseFn rest LogE
-parsePrimary (ExpTok  : LParenTok : rest) = parseFn rest ExpE
-parsePrimary (SqrtTok : LParenTok : rest) = parseFn rest SqrtE
-
-parsePrimary (LParenTok : rest) =
-    let (e, rest') = parseAddSub rest
-    in case rest' of
-        RParenTok : rest'' -> (e, rest'')
-        _ -> error "Expected ')'"
-
-parsePrimary tokens =
-    error ("Expected expression, got: " ++ show (take 3 tokens))
-
-parseFn :: [Token] -> (Expr -> Expr) -> (Expr, [Token])
-parseFn rest ctor =
-    let (e, rest') = parseAddSub rest
-    in case rest' of
-        RParenTok : rest'' -> (ctor e, rest'')
-        _ -> error "Expected ')' after function call"
-
-------------------------------------------------------------
--- EVALUATOR
-------------------------------------------------------------
-
-evalWith :: Double -> Expr -> Double
-evalWith _ (Num n)   = n
-evalWith _ Pi        = pi
-evalWith _ E         = exp 1
-evalWith x Var       = x
-evalWith x (Add a b) = evalWith x a + evalWith x b
-evalWith x (Sub a b) = evalWith x a - evalWith x b
-evalWith x (Mul a b) = evalWith x a * evalWith x b
-evalWith x (Div a b) = evalWith x a / evalWith x b
-evalWith x (Pow a b) = evalWith x a ** evalWith x b
-evalWith x (SinE a)  = sin (evalWith x a)
-evalWith x (CosE a)  = cos (evalWith x a)
-evalWith x (TanE a)  = tan (evalWith x a)
-evalWith x (LogE a)  = log (evalWith x a)
-evalWith x (ExpE a)  = exp (evalWith x a)
-evalWith x (SqrtE a) = sqrt (evalWith x a)
-
-------------------------------------------------------------
--- NUMERICAL METHODS
-------------------------------------------------------------
-
-derivative :: (Double -> Double) -> Double -> Double
-derivative f x = (f (x + h) - f (x - h)) / (2 * h)
-  where h = 1e-8
-
-integral :: (Double -> Double) -> Double -> Double -> Double
-integral f a b = simpson (1000 :: Int)
-  where
-    simpson n =
-        let h  = (b - a) / fromIntegral n
-            x i = a + fromIntegral i * h
-            s0 = f a + f b
-            s1 = sum [f (x i) | i <- [1,3..n-1]]
-            s2 = sum [f (x i) | i <- [2,4..n-2]]
-        in h / 3 * (s0 + 4 * s1 + 2 * s2)
-
-------------------------------------------------------------
--- ALGEBRA SOLVERS
-------------------------------------------------------------
-
-solveLinear :: Expr -> IO ()
-solveLinear expr =
-    let b = evalWith 0 expr
-        a = evalWith 1 expr - b
-    in if abs a < 1e-12
-        then putStrLn "No unique solution (coefficient of x is 0)"
-        else putStrLn $ "x = " ++ show (-b / a)
-
-solveQuadratic :: Expr -> IO ()
-solveQuadratic expr =
-    let c = evalWith 0 expr
-        b = (evalWith 1 expr - evalWith (-1) expr) / 2
-        a = evalWith 1 expr - b - c
-        d = b * b - 4 * a * c
-    in if abs a < 1e-12
-        then solveLinear expr
-        else if d < 0
-            then let re = -b / (2 * a)
-                     im = sqrt (-d) / (2 * a)
-                 in putStrLn $ "x = " ++ show re ++ " + " ++ show im ++ "i"
-                           ++ "\nx = " ++ show re ++ " - " ++ show im ++ "i"
-            else let x1 = (-b + sqrt d) / (2 * a)
-                     x2 = (-b - sqrt d) / (2 * a)
-                 in putStrLn $ "x = " ++ show x1 ++ "\nx = " ++ show x2
-
-------------------------------------------------------------
--- COMMAND HANDLERS
+-- COMMAND UTILITIES
 ------------------------------------------------------------
 
 breakSubstr :: String -> String -> Maybe (String, String)
@@ -226,58 +63,47 @@ breakSubstr needle haystack =
         (_, [])   -> Nothing
         (b, a:_) -> Just (take (length b) haystack, drop (length needle) a)
 
-handleHelp :: IO ()
-handleHelp = putStrLn $ unlines
-    [ "Integra v0.2 - REPL Calculator"
-    , ""
-    , "Expressions:"
-    , "  Basic arithmetic:   2 + 3, 4 * 5, 10 / 2, 2^3"
-    , "  Trig:               sin(x), cos(x), tan(x)"
-    , "  Log/Exp/Sqrt:       log(x), exp(x), sqrt(x)"
-    , "  Constants:          pi, e"
-    , "  Variable:           x"
-    , ""
-    , "Commands:"
-    , "  :help                     Show this help"
-    , "  :quit                     Exit the REPL"
-    , "  :solve <expr>             Solve linear   <expr> = 0 for x"
-    , "  :solveq <expr>            Solve quadratic <expr> = 0 for x"
-    , "  :deriv <expr> at <x>      Numerical derivative of <expr> at x"
-    , "  :integral <expr> from <a> to <b>"
-    , "                            Numerical definite integral from a to b"
-    ]
+readOrEval :: String -> Double
+readOrEval s = case reads s of
+    [(n, "")] -> n
+    _         -> evalWithX 0 (parse (lexer s))
 
-handleSolve :: String -> IO ()
+------------------------------------------------------------
+-- COMMAND HANDLERS
+------------------------------------------------------------
+
+evalExpr :: String -> Double -> (String, Double)
+evalExpr input lastAns =
+    let expr  = parse (lexer input)
+        result = eval 0 lastAns expr
+    in (show result, result)
+
+handleSolve :: String -> (String, Double)
 handleSolve s =
     let exprStr = case breakSubstr " = " s of
             Just (left, _) -> left
             Nothing        -> s
-    in solveLinear (parse (lexer exprStr))
+    in (solveLinear (parse (lexer exprStr)), 0)
 
-handleSolveq :: String -> IO ()
+handleSolveq :: String -> (String, Double)
 handleSolveq s =
     let exprStr = case breakSubstr " = " s of
             Just (left, _) -> left
             Nothing        -> s
-    in solveQuadratic (parse (lexer exprStr))
+    in (solveQuadratic (parse (lexer exprStr)), 0)
 
-readOrEval :: String -> Double
-readOrEval s = case reads s of
-    [(n, "")] -> n
-    _         -> evalWith 0 (parse (lexer s))
-
-handleDeriv :: String -> IO ()
+handleDeriv :: String -> (String, Double)
 handleDeriv s =
     case breakSubstr " at " s of
         Just (exprStr, xStr) ->
             let expr = parse (lexer exprStr)
                 x     = readOrEval xStr
-                r     = derivative (flip evalWith expr) x
-            in putStrLn $ "d/dx f(x) at x = " ++ xStr ++ " = " ++ show r
+                r     = derivative (\xv -> evalWithX xv expr) x
+            in ("d/dx f(x) at x = " ++ xStr ++ " = " ++ show r, 0)
         Nothing ->
-            putStrLn "Usage: :deriv <expr> at <x>"
+            ("Usage: :deriv <expr> at <x>", 0)
 
-handleIntegral :: String -> IO ()
+handleIntegral :: String -> (String, Double)
 handleIntegral s =
     case breakSubstr " from " s of
         Just (exprStr, rest) ->
@@ -286,43 +112,85 @@ handleIntegral s =
                     let expr = parse (lexer exprStr)
                         a     = readOrEval aStr
                         b     = readOrEval bStr
-                        r     = integral (flip evalWith expr) a b
-                    in putStrLn $ "Integral from " ++ aStr ++ " to " ++ bStr ++ " = " ++ show r
+                        r     = integral (\xv -> evalWithX xv expr) a b
+                    in ("Integral from " ++ aStr ++ " to " ++ bStr ++ " = " ++ show r, 0)
                 Nothing ->
-                    putStrLn "Usage: :integral <expr> from <a> to <b>"
+                    ("Usage: :integral <expr> from <a> to <b>", 0)
         Nothing ->
-            putStrLn "Usage: :integral <expr> from <a> to <b>"
+            ("Usage: :integral <expr> from <a> to <b>", 0)
+
+------------------------------------------------------------
+-- INPUT PROCESSING
+------------------------------------------------------------
+
+processInput :: String -> Double -> (String, Double)
+processInput input lastAns
+    | Just rest <- stripPrefix ":solve " input     = handleSolve rest
+    | Just rest <- stripPrefix ":solveq " input    = handleSolveq rest
+    | Just rest <- stripPrefix ":deriv " input     = handleDeriv rest
+    | Just rest <- stripPrefix ":integral " input  = handleIntegral rest
+    | otherwise                                     = evalExpr input lastAns
+
+trim :: String -> String
+trim = reverse . dropWhile isSpace . reverse . dropWhile isSpace
+
+------------------------------------------------------------
+-- COMPLETION
+------------------------------------------------------------
+
+commands :: [String]
+commands =
+    [ ":help"
+    , ":quit"
+    , ":solve "
+    , ":solveq "
+    , ":deriv "
+    , ":integral "
+    ]
+
+wordCompleter :: String -> IO [Completion]
+wordCompleter s = return [simpleCompletion c | c <- commands, c `isPrefixOf` s]
+
+completion :: CompletionFunc IO
+completion = completeWord Nothing "" wordCompleter
 
 ------------------------------------------------------------
 -- REPL
 ------------------------------------------------------------
 
-processInput :: String -> IO ()
-processInput input
-    | Just rest <- stripPrefix ":solve " input     = handleSolve rest
-    | Just rest <- stripPrefix ":solveq " input    = handleSolveq rest
-    | Just rest <- stripPrefix ":deriv " input     = handleDeriv rest
-    | Just rest <- stripPrefix ":integral " input  = handleIntegral rest
-    | otherwise = do
-        let expr   = parse (lexer input)
-            result = evalWith 0 expr
-        print result
+repl :: Double -> InputT IO ()
+repl lastAns = do
+    minput <- getInputLine ">integra "
+    case minput of
+        Nothing -> return ()
+        Just input -> do
+            let trimmed = trim input
+            if null trimmed
+                then repl lastAns
+                else if trimmed == ":quit"
+                    then outputStrLn "Goodbye."
+                    else if trimmed == ":help"
+                        then outputStrLn helpText >> repl lastAns
+                        else do
+                            result <- safeProcess trimmed lastAns
+                            case result of
+                                Left err -> do
+                                    outputStrLn ("Error: " ++ err)
+                                    repl lastAns
+                                Right (output, newAns) -> do
+                                    outputStrLn output
+                                    repl newAns
 
-repl :: IO ()
-repl = do
-    putStr "integra> "
-    input <- getLine
-    if input == ":quit"
-        then putStrLn "Goodbye."
-        else if input == ":help"
-            then handleHelp >> repl
-            else do
-                processInput input
-                    `catch` (\e -> putStrLn ("Error: " ++ show (e :: SomeException)))
-                repl
+safeProcess :: String -> Double -> InputT IO (Either String (String, Double))
+safeProcess input lastAns = liftIO $ do
+    r <- try (evaluate $ force $ processInput input lastAns)
+             :: IO (Either SomeException (String, Double))
+    return $ case r of
+        Left e          -> Left (show e)
+        Right (out, ans) -> Right (out, ans)
 
 main :: IO ()
 main = do
-    putStrLn "Integra v0.2"
+    putStrLn "Integra v0.3"
     putStrLn "Type :help for commands, :quit to exit"
-    repl
+    runInputT (setComplete completion defaultSettings) (repl 0)
