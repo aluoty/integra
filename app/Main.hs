@@ -1,6 +1,11 @@
 module Main where
 
 import Data.Char (isDigit, isSpace)
+import Text.Read (readMaybe)
+
+------------------------------------------------------------
+-- TOKENIZER
+------------------------------------------------------------
 
 data Token
     = Number Double
@@ -8,67 +13,98 @@ data Token
     | Minus
     | Times
     | Divide
-    | LParen  -- Left Paranthesis
-    | RParen  -- Right Paranthesis
-    deriving (Show)
+    deriving (Show, Eq)
 
 lexer :: String -> [Token]
 lexer [] = []
 
--- Ignore spaces
 lexer (x:xs)
-    | isSpace x =
-        lexer xs
+    | isSpace x = lexer xs
 
--- Operators
-lexer ('+':xs) =
-    Plus : lexer xs
+lexer ('+':xs) = Plus : lexer xs
+lexer ('-':xs) = Minus : lexer xs
+lexer ('*':xs) = Times : lexer xs
+lexer ('/':xs) = Divide : lexer xs
 
-lexer ('-':xs) =
-    Minus : lexer xs
-
-lexer ('*':xs) =
-    Times : lexer xs
-
-lexer ('/':xs) =
-    Divide : lexer xs
-
-lexer ('(':xs) =
-    LParen : lexer xs
-
-lexer (')':xs) =
-    RParen : lexer xs
-
--- Numbers
 lexer (x:xs)
     | isDigit x =
-        let
-            digits =
-                x : takeWhile (\c -> isDigit c || c == '.') xs
+        let (num, rest) = span (\c -> isDigit c || c == '.') (x:xs)
+        in Number (read num) : lexer rest
 
-            rest =
-                dropWhile (\c -> isDigit c || c == '.') xs
-        in
-            Number (read digits) : lexer rest
-
--- Unknown character
 lexer (x:_) =
     error ("Unknown character: " ++ [x])
+
+------------------------------------------------------------
+-- AST
+------------------------------------------------------------
+
+data Expr
+    = Num Double
+    | Add Expr Expr
+    | Sub Expr Expr
+    | Mul Expr Expr
+    | Div Expr Expr
+    deriving (Show)
+
+------------------------------------------------------------
+-- PARSER (very simple, no precedence yet)
+------------------------------------------------------------
+
+parse :: [Token] -> Expr
+parse tokens =
+    build tokens
+  where
+    build [Number a] = Num a
+
+    build (Number a : Plus : Number b : rest) =
+        Add (Num a) (build (Number b : rest))
+
+    build (Number a : Minus : Number b : rest) =
+        Sub (Num a) (build (Number b : rest))
+
+    build (Number a : Times : Number b : rest) =
+        Mul (Num a) (build (Number b : rest))
+
+    build (Number a : Divide : Number b : rest) =
+        Div (Num a) (build (Number b : rest))
+
+    build _ =
+        error ("Cannot parse tokens: " ++ show tokens)
+
+------------------------------------------------------------
+-- EVALUATOR
+------------------------------------------------------------
+
+eval :: Expr -> Double
+eval (Num n) = n
+
+eval (Add a b) = eval a + eval b
+eval (Sub a b) = eval a - eval b
+eval (Mul a b) = eval a * eval b
+eval (Div a b) = eval a / eval b
+
+------------------------------------------------------------
+-- REPL
+------------------------------------------------------------
 
 repl :: IO ()
 repl = do
     putStr "integra> "
-    line <- getLine
+    input <- getLine
 
-    if line == ":quit"
+    if input == ":quit"
         then putStrLn "Goodbye."
         else do
-            print (lexer line)
+            let tokens = lexer input
+            let ast = parse tokens
+            let result = eval ast
+
+            print result
             repl
 
 main :: IO ()
 main = do
     putStrLn "Integra v0.2"
-    putStrLn "With Lexer Demo"
+    putStrLn "Basic arithmetic REPL"
     putStrLn "Type :quit to exit"
     repl
