@@ -9,22 +9,16 @@ data Expr
     | Pow    Expr Expr
     | Var
     | Ans
-    | SinE   Expr
-    | CosE   Expr
-    | TanE   Expr
-    | AsinE  Expr
-    | AcosE  Expr
-    | AtanE  Expr
-    | SinhE  Expr
-    | CoshE  Expr
-    | TanhE  Expr
-    | LogE   Expr
-    | ExpE   Expr
-    | SqrtE  Expr
-    | AbsE   Expr
-    | FloorE Expr
-    | CeilE  Expr
-    | RoundE Expr
-    | Pi
-    | E
+    | SinE   Expr | CosE   Expr | TanE   Expr
+    | CscE   Expr | SecE   Expr | CotE   Expr
+    | AsinE  Expr | AcosE  Expr | AtanE  Expr
+    | AcscE  Expr | AsecE  Expr | AcotE  Expr
+    | SinhE  Expr | CoshE  Expr | TanhE  Expr
+    | CschE  Expr | SechE  Expr | CothE  Expr
+    | LogE   Expr | Log2E  Expr | Log10E Expr
+    | ExpE   Expr | SqrtE  Expr
+    | AbsE   Expr | SignE  Expr
+    | FloorE Expr | CeilE  Expr | RoundE Expr
+    | GammaE Expr | ErfE   Expr
+    | Pi | E | Tau | Phi
     deriving (Show)

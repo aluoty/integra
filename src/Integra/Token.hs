@@ -8,11 +8,17 @@ data Token
     | LParenTok | RParenTok
     | VarTok
     | SinTok | CosTok | TanTok
+    | CscTok | SecTok | CotTok
     | AsinTok | AcosTok | AtanTok
+    | AcscTok | AsecTok | AcotTok
     | SinhTok | CoshTok | TanhTok
-    | LogTok | ExpTok | SqrtTok
-    | AbsTok | FloorTok | CeilTok | RoundTok
-    | PiTok | ETok
+    | CschTok | SechTok | CothTok
+    | LogTok | Log2Tok | Log10Tok
+    | ExpTok | SqrtTok
+    | AbsTok | SignTok
+    | FloorTok | CeilTok | RoundTok
+    | GammaTok | ErfTok
+    | PiTok | ETok | TauTok | PhiTok
     | AnsTok
     deriving (Show, Eq)
 
@@ -26,6 +32,8 @@ lexer ('/':xs) = DivideTok  : lexer xs
 lexer ('^':xs) = PowerTok   : lexer xs
 lexer ('(':xs) = LParenTok  : lexer xs
 lexer (')':xs) = RParenTok  : lexer xs
+lexer ('l':'o':'g':'1':'0':xs) = Log10Tok : lexer xs
+lexer ('l':'o':'g':'2':xs)     = Log2Tok  : lexer xs
 lexer (x:xs) | isDigit x || x == '.' =
     let (num, rest) = span (\c -> isDigit c || c == '.') (x:xs)
     in NumberTok (read num) : lexer rest
@@ -35,20 +43,34 @@ lexer (x:xs) | isAlpha x =
         "sin"   -> SinTok   : lexer rest
         "cos"   -> CosTok   : lexer rest
         "tan"   -> TanTok   : lexer rest
+        "csc"   -> CscTok   : lexer rest
+        "sec"   -> SecTok   : lexer rest
+        "cot"   -> CotTok   : lexer rest
         "asin"  -> AsinTok  : lexer rest
         "acos"  -> AcosTok  : lexer rest
         "atan"  -> AtanTok  : lexer rest
+        "acsc"  -> AcscTok  : lexer rest
+        "asec"  -> AsecTok  : lexer rest
+        "acot"  -> AcotTok  : lexer rest
         "sinh"  -> SinhTok  : lexer rest
         "cosh"  -> CoshTok  : lexer rest
         "tanh"  -> TanhTok  : lexer rest
+        "csch"  -> CschTok  : lexer rest
+        "sech"  -> SechTok  : lexer rest
+        "coth"  -> CothTok  : lexer rest
         "log"   -> LogTok   : lexer rest
         "exp"   -> ExpTok   : lexer rest
         "sqrt"  -> SqrtTok  : lexer rest
         "abs"   -> AbsTok   : lexer rest
+        "sign"  -> SignTok  : lexer rest
         "floor" -> FloorTok : lexer rest
         "ceil"  -> CeilTok  : lexer rest
         "round" -> RoundTok : lexer rest
+        "gamma" -> GammaTok : lexer rest
+        "erf"   -> ErfTok   : lexer rest
         "pi"    -> PiTok    : lexer rest
+        "tau"   -> TauTok   : lexer rest
+        "phi"   -> PhiTok   : lexer rest
         "e"     -> ETok     : lexer rest
         "x"     -> VarTok   : lexer rest
         "ans"   -> AnsTok   : lexer rest
