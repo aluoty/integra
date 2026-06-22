@@ -34,8 +34,23 @@ executable integra
     hs-source-dirs:   app
     build-depends:
         base     ^>=4.20.2.0,
-        deepseq  ^>=1.5,
         integra,
         haskeline ^>=0.8,
         process  ^>=1.6
+    default-language: Haskell2010
+
+-- Web mode (requires zlib C library, e.g. libz-dev on Debian, zlib on macOS,
+-- or run 'nix-shell -p zlib.dev' on NixOS before building)
+executable integra-web
+    import:           warnings
+    main-is:          Web.hs
+    hs-source-dirs:   app
+    build-depends:
+        base       ^>=4.20.2.0,
+        integra,
+        aeson      ^>=2.2,
+        scotty     ^>=0.22,
+        text       ^>=2.1,
+        bytestring ^>=0.12,
+        warp       ^>=3.4
     default-language: Haskell2010

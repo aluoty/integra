@@ -7,6 +7,12 @@ data Expr
     | Mul    Expr Expr
     | Div    Expr Expr
     | Pow    Expr Expr
+    | Gt     Expr Expr
+    | Ge     Expr Expr
+    | Lt     Expr Expr
+    | Le     Expr Expr
+    | Eqq    Expr Expr
+    | Neq    Expr Expr
     | Var
     | Ans
     | SinE   Expr | CosE   Expr | TanE   Expr
@@ -16,8 +22,8 @@ data Expr
     | SinhE  Expr | CoshE  Expr | TanhE  Expr
     | CschE  Expr | SechE  Expr | CothE  Expr
     | AsinhE Expr | AcoshE Expr | AtanhE Expr
-    | LogE   Expr | Log2E  Expr | Log10E Expr
-    | ExpE   Expr | SqrtE  Expr
+    | LogE   Expr | Log2E  Expr | Log10E Expr | Log1pE Expr
+    | ExpE   Expr | Expm1E Expr | SqrtE  Expr | CbrtE  Expr
     | AbsE   Expr | SignE  Expr
     | FloorE Expr | CeilE  Expr | RoundE Expr
     | GammaE Expr | ErfE   Expr
