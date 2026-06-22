@@ -13,12 +13,14 @@ data Token
     | AcscTok | AsecTok | AcotTok
     | SinhTok | CoshTok | TanhTok
     | CschTok | SechTok | CothTok
+    | AsinhTok | AcoshTok | AtanhTok
     | LogTok | Log2Tok | Log10Tok
     | ExpTok | SqrtTok
     | AbsTok | SignTok
     | FloorTok | CeilTok | RoundTok
     | GammaTok | ErfTok
-    | PiTok | ETok | TauTok | PhiTok
+    | ConjTok | ReTok | ImTok
+    | PiTok | ETok | TauTok | PhiTok | ITok
     | AnsTok
     deriving (Show, Eq)
 
@@ -58,6 +60,9 @@ lexer (x:xs) | isAlpha x =
         "csch"  -> CschTok  : lexer rest
         "sech"  -> SechTok  : lexer rest
         "coth"  -> CothTok  : lexer rest
+        "asinh" -> AsinhTok : lexer rest
+        "acosh" -> AcoshTok : lexer rest
+        "atanh" -> AtanhTok : lexer rest
         "log"   -> LogTok   : lexer rest
         "exp"   -> ExpTok   : lexer rest
         "sqrt"  -> SqrtTok  : lexer rest
@@ -68,10 +73,14 @@ lexer (x:xs) | isAlpha x =
         "round" -> RoundTok : lexer rest
         "gamma" -> GammaTok : lexer rest
         "erf"   -> ErfTok   : lexer rest
+        "conj"  -> ConjTok  : lexer rest
+        "re"    -> ReTok    : lexer rest
+        "im"    -> ImTok    : lexer rest
         "pi"    -> PiTok    : lexer rest
         "tau"   -> TauTok   : lexer rest
         "phi"   -> PhiTok   : lexer rest
         "e"     -> ETok     : lexer rest
+        "i"     -> ITok     : lexer rest
         "x"     -> VarTok   : lexer rest
         "ans"   -> AnsTok   : lexer rest
         _       -> error ("Unknown identifier: " ++ name)

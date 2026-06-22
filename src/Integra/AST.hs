@@ -15,10 +15,12 @@ data Expr
     | AcscE  Expr | AsecE  Expr | AcotE  Expr
     | SinhE  Expr | CoshE  Expr | TanhE  Expr
     | CschE  Expr | SechE  Expr | CothE  Expr
+    | AsinhE Expr | AcoshE Expr | AtanhE Expr
     | LogE   Expr | Log2E  Expr | Log10E Expr
     | ExpE   Expr | SqrtE  Expr
     | AbsE   Expr | SignE  Expr
     | FloorE Expr | CeilE  Expr | RoundE Expr
     | GammaE Expr | ErfE   Expr
-    | Pi | E | Tau | Phi
+    | ConjE  Expr | ReE    Expr | ImE    Expr
+    | Pi | E | Tau | Phi | I
     deriving (Show)

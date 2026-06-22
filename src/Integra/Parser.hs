@@ -28,10 +28,73 @@ parseMulDiv tokens =
 
 parsePower :: [Token] -> (Expr, [Token])
 parsePower tokens =
-    let (left, rest) = parseUnary tokens
+    let (left, rest) = parseImplicit tokens
     in case rest of
         PowerTok : rest' -> let (r, rest'') = parsePower rest' in (Pow left r, rest'')
         _ -> (left, rest)
+
+-- Implicit multiplication: 4i, 2x, 3(x+1), sin(x)cos(x), etc.
+parseImplicit :: [Token] -> (Expr, [Token])
+parseImplicit tokens =
+    let (left, rest) = parseUnary tokens
+    in if not (null rest) && isPrimaryStart rest
+       then implicitMul left rest
+       else (left, rest)
+
+implicitMul :: Expr -> [Token] -> (Expr, [Token])
+implicitMul left rest =
+    let (right, rest') = parsePrimary rest
+    in if not (null rest') && isPrimaryStart rest'
+       then implicitMul (Mul left right) rest'
+       else (Mul left right, rest')
+
+isPrimaryStart :: [Token] -> Bool
+isPrimaryStart (NumberTok _ : _) = True
+isPrimaryStart (ITok : _)        = True
+isPrimaryStart (VarTok : _)      = True
+isPrimaryStart (AnsTok : _)      = True
+isPrimaryStart (LParenTok : _)   = True
+isPrimaryStart (SinTok : _)      = True
+isPrimaryStart (CosTok : _)      = True
+isPrimaryStart (TanTok : _)      = True
+isPrimaryStart (CscTok : _)      = True
+isPrimaryStart (SecTok : _)      = True
+isPrimaryStart (CotTok : _)      = True
+isPrimaryStart (AsinTok : _)     = True
+isPrimaryStart (AcosTok : _)     = True
+isPrimaryStart (AtanTok : _)     = True
+isPrimaryStart (AcscTok : _)     = True
+isPrimaryStart (AsecTok : _)     = True
+isPrimaryStart (AcotTok : _)     = True
+isPrimaryStart (SinhTok : _)     = True
+isPrimaryStart (CoshTok : _)     = True
+isPrimaryStart (TanhTok : _)     = True
+isPrimaryStart (CschTok : _)     = True
+isPrimaryStart (SechTok : _)     = True
+isPrimaryStart (CothTok : _)     = True
+isPrimaryStart (AsinhTok : _)    = True
+isPrimaryStart (AcoshTok : _)    = True
+isPrimaryStart (AtanhTok : _)    = True
+isPrimaryStart (LogTok : _)      = True
+isPrimaryStart (Log2Tok : _)     = True
+isPrimaryStart (Log10Tok : _)    = True
+isPrimaryStart (ExpTok : _)      = True
+isPrimaryStart (SqrtTok : _)     = True
+isPrimaryStart (AbsTok : _)      = True
+isPrimaryStart (SignTok : _)     = True
+isPrimaryStart (FloorTok : _)    = True
+isPrimaryStart (CeilTok : _)     = True
+isPrimaryStart (RoundTok : _)    = True
+isPrimaryStart (GammaTok : _)    = True
+isPrimaryStart (ErfTok : _)      = True
+isPrimaryStart (ConjTok : _)     = True
+isPrimaryStart (ReTok : _)       = True
+isPrimaryStart (ImTok : _)       = True
+isPrimaryStart (PiTok : _)       = True
+isPrimaryStart (ETok : _)        = True
+isPrimaryStart (TauTok : _)      = True
+isPrimaryStart (PhiTok : _)      = True
+isPrimaryStart _                 = False
 
 parseUnary :: [Token] -> (Expr, [Token])
 parseUnary (MinusTok : rest) =
@@ -45,6 +108,7 @@ parsePrimary (PiTok    : rest)    = (Pi, rest)
 parsePrimary (ETok     : rest)    = (E, rest)
 parsePrimary (TauTok   : rest)    = (Tau, rest)
 parsePrimary (PhiTok   : rest)    = (Phi, rest)
+parsePrimary (ITok     : rest)    = (I, rest)
 parsePrimary (VarTok   : rest)    = (Var, rest)
 parsePrimary (AnsTok   : rest)    = (Ans, rest)
 
@@ -66,6 +130,9 @@ parsePrimary (TanhTok  : LParenTok : rest) = parseFn rest TanhE
 parsePrimary (CschTok  : LParenTok : rest) = parseFn rest CschE
 parsePrimary (SechTok  : LParenTok : rest) = parseFn rest SechE
 parsePrimary (CothTok  : LParenTok : rest) = parseFn rest CothE
+parsePrimary (AsinhTok : LParenTok : rest) = parseFn rest AsinhE
+parsePrimary (AcoshTok : LParenTok : rest) = parseFn rest AcoshE
+parsePrimary (AtanhTok : LParenTok : rest) = parseFn rest AtanhE
 parsePrimary (LogTok   : LParenTok : rest) = parseFn rest LogE
 parsePrimary (Log2Tok  : LParenTok : rest) = parseFn rest Log2E
 parsePrimary (Log10Tok : LParenTok : rest) = parseFn rest Log10E
@@ -78,6 +145,9 @@ parsePrimary (CeilTok  : LParenTok : rest) = parseFn rest CeilE
 parsePrimary (RoundTok : LParenTok : rest) = parseFn rest RoundE
 parsePrimary (GammaTok : LParenTok : rest) = parseFn rest GammaE
 parsePrimary (ErfTok   : LParenTok : rest) = parseFn rest ErfE
+parsePrimary (ConjTok  : LParenTok : rest) = parseFn rest ConjE
+parsePrimary (ReTok    : LParenTok : rest) = parseFn rest ReE
+parsePrimary (ImTok    : LParenTok : rest) = parseFn rest ImE
 
 parsePrimary (LParenTok : rest) =
     let (e, rest') = parseAddSub rest
