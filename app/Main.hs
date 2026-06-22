@@ -46,7 +46,7 @@ magenta = "\ESC[35m"
 
 banner :: String
 banner = unlines
-    [ cyan ++ bold ++ "  ─── λ Integra v0.5 ───" ++ reset
+    [ cyan ++ bold ++ "  ─── λ Integra v1.0 ───" ++ reset
     , dim ++ "  " ++ version ++ reset
     , dim ++ "  type " ++ green ++ ":help" ++ dim ++ " for commands, "
               ++ green ++ ":quit" ++ dim ++ " to exit" ++ reset
@@ -61,7 +61,7 @@ version = "REPL calculator  ·  complex  ·  graphing  ·  calculus"
 
 helpText :: String
 helpText = unlines
-    [ bold ++ cyan ++ "Integra v0.5 — Commands & Expressions" ++ reset
+    [ bold ++ cyan ++ "Integra v1.0 — Commands & Expressions" ++ reset
     , ""
     , bold ++ "Expressions" ++ reset
     , "  " ++ green ++ "Arithmetic" ++ reset ++ "       2 + 3, 4 * 5, 10 / 2, 2^3"
@@ -118,7 +118,7 @@ helpText = unlines
 
 aboutText :: String
 aboutText = unlines
-    [ bold ++ cyan ++ "Integra v0.5" ++ reset
+    [ bold ++ cyan ++ "Integra v1.0" ++ reset
     , "  A terminal-based REPL calculator with complex numbers,"
     , "  symbolic differentiation, SVG graphing, fractals,"
     , "  calculus, and algebra solving."
