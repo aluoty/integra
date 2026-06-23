@@ -1,0 +1,7 @@
+# Cloudflare Pages redirects/proxying
+#
+# To proxy API requests to a backend server, uncomment and edit:
+# /api/*  https://your-backend.example.com/api/:splat  200
+#
+# SPA fallback (not needed for single-page app, but kept for reference):
+# /*  /index.html  200

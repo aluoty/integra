@@ -1,4 +1,5 @@
 "use strict";
+const API_BASE = (typeof INTEGRA_API_BASE !== 'undefined' ? INTEGRA_API_BASE : '') + '/api';
 const input = document.getElementById('input');
 const output = document.getElementById('output');
 function addLine(text, cls = '') {
@@ -36,7 +37,7 @@ async function evalExpr(expr) {
         return;
     }
     try {
-        const data = await fetchJSON('/api/eval?expr=' + encodeURIComponent(expr));
+        const data = await fetchJSON(API_BASE + '/eval?expr=' + encodeURIComponent(expr));
         addLine(data.result, 'result');
     }
     catch (e) {
@@ -72,10 +73,10 @@ async function handleCommand(cmd) {
                 exprStr = rest;
             }
             try {
-                const data = await fetchJSON('/api/deriv?expr=' + encodeURIComponent(exprStr));
+                const data = await fetchJSON(API_BASE + '/deriv?expr=' + encodeURIComponent(exprStr));
                 addLine("f'(x) = " + data.deriv, 'deriv');
                 if (atStr) {
-                    const derivAtRes = await fetchJSON('/api/eval?expr=(' + data.deriv + ')');
+                    const derivAtRes = await fetchJSON(API_BASE + '/eval?expr=(' + data.deriv + ')');
                     addLine("f'(" + atStr + ') = ' + derivAtRes.result, 'result');
                 }
             }
@@ -91,7 +92,7 @@ async function handleCommand(cmd) {
                 const fromVal = match[2];
                 const toVal = match[3];
                 try {
-                    const data = await fetchJSON('/api/integral?expr=' + encodeURIComponent(exprStr)
+                    const data = await fetchJSON(API_BASE + '/integral?expr=' + encodeURIComponent(exprStr)
                         + '&from=' + encodeURIComponent(fromVal)
                         + '&to=' + encodeURIComponent(toVal));
                     addLine('\u222B f(x) dx = ' + data.result, 'result');
@@ -107,7 +108,7 @@ async function handleCommand(cmd) {
         }
         case 'solve': {
             try {
-                const data = await fetchJSON('/api/solve?expr=' + encodeURIComponent(rest));
+                const data = await fetchJSON(API_BASE + '/solve?expr=' + encodeURIComponent(rest));
                 addLine(data.solution, 'result');
             }
             catch (e) {
@@ -117,7 +118,7 @@ async function handleCommand(cmd) {
         }
         case 'solveq': {
             try {
-                const data = await fetchJSON('/api/solveq?expr=' + encodeURIComponent(rest));
+                const data = await fetchJSON(API_BASE + '/solveq?expr=' + encodeURIComponent(rest));
                 addLine(data.solution, 'result');
             }
             catch (e) {
@@ -127,7 +128,7 @@ async function handleCommand(cmd) {
         }
         case 'solvec': {
             try {
-                const data = await fetchJSON('/api/solvec?expr=' + encodeURIComponent(rest));
+                const data = await fetchJSON(API_BASE + '/solvec?expr=' + encodeURIComponent(rest));
                 addLine(data.solution, 'result');
             }
             catch (e) {
@@ -141,7 +142,7 @@ async function handleCommand(cmd) {
             const fromVal = match[2] || '';
             const toVal = match[3] || '';
             try {
-                const svg = await fetchText('/api/graph?expr=' + encodeURIComponent(exprStr)
+                const svg = await fetchText(API_BASE + '/graph?expr=' + encodeURIComponent(exprStr)
                     + '&from=' + encodeURIComponent(fromVal)
                     + '&to=' + encodeURIComponent(toVal));
                 addHTML('<div class="svg-container">' + svg + '</div>');
@@ -161,7 +162,7 @@ async function handleCommand(cmd) {
             const yMin = args[5] || '';
             const yMax = args[6] || '';
             try {
-                let url = '/api/mandelbrot?width=' + width + '&height=' + height + '&iter=' + iter;
+                let url = API_BASE + '/mandelbrot?width=' + width + '&height=' + height + '&iter=' + iter;
                 if (xMin)
                     url += '&xMin=' + xMin;
                 if (xMax)
@@ -190,7 +191,7 @@ async function handleCommand(cmd) {
             const yMin = args[7] || '';
             const yMax = args[8] || '';
             try {
-                let url = '/api/julia?cx=' + cx + '&cy=' + cy + '&width=' + width + '&height=' + height + '&iter=' + iter;
+                let url = API_BASE + '/julia?cx=' + cx + '&cy=' + cy + '&width=' + width + '&height=' + height + '&iter=' + iter;
                 if (xMin)
                     url += '&xMin=' + xMin;
                 if (xMax)
@@ -217,7 +218,7 @@ async function handleCommand(cmd) {
             const yMin = args[5] || '';
             const yMax = args[6] || '';
             try {
-                let url = '/api/burningship?width=' + width + '&height=' + height + '&iter=' + iter;
+                let url = API_BASE + '/burningship?width=' + width + '&height=' + height + '&iter=' + iter;
                 if (xMin)
                     url += '&xMin=' + xMin;
                 if (xMax)

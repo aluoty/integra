@@ -20,6 +20,10 @@ interface IntegralResponse {
   to: string;
 }
 
+declare const INTEGRA_API_BASE: string | undefined;
+
+const API_BASE: string = (typeof INTEGRA_API_BASE !== 'undefined' ? INTEGRA_API_BASE : '') + '/api';
+
 const input = document.getElementById('input') as HTMLInputElement;
 const output = document.getElementById('output') as HTMLDivElement;
 
@@ -61,7 +65,7 @@ async function evalExpr(expr: string): Promise<void> {
   }
 
   try {
-    const data = await fetchJSON<EvalResponse>('/api/eval?expr=' + encodeURIComponent(expr));
+    const data = await fetchJSON<EvalResponse>(API_BASE + '/eval?expr=' + encodeURIComponent(expr));
     addLine(data.result, 'result');
   } catch (e: unknown) {
     addLine('Error: ' + (e instanceof Error ? e.message : String(e)), 'error');
@@ -98,10 +102,10 @@ async function handleCommand(cmd: string): Promise<void> {
         exprStr = rest;
       }
       try {
-        const data = await fetchJSON<DerivResponse>('/api/deriv?expr=' + encodeURIComponent(exprStr));
+        const data = await fetchJSON<DerivResponse>(API_BASE + '/deriv?expr=' + encodeURIComponent(exprStr));
         addLine("f'(x) = " + data.deriv, 'deriv');
         if (atStr) {
-          const derivAtRes = await fetchJSON<EvalResponse>('/api/eval?expr=(' + data.deriv + ')');
+          const derivAtRes = await fetchJSON<EvalResponse>(API_BASE + '/eval?expr=(' + data.deriv + ')');
           addLine("f'(" + atStr + ') = ' + derivAtRes.result, 'result');
         }
       } catch (e: unknown) {
@@ -118,7 +122,7 @@ async function handleCommand(cmd: string): Promise<void> {
         const toVal = match[3];
         try {
           const data = await fetchJSON<IntegralResponse>(
-            '/api/integral?expr=' + encodeURIComponent(exprStr)
+            API_BASE + '/integral?expr=' + encodeURIComponent(exprStr)
             + '&from=' + encodeURIComponent(fromVal)
             + '&to=' + encodeURIComponent(toVal)
           );
@@ -134,7 +138,7 @@ async function handleCommand(cmd: string): Promise<void> {
 
     case 'solve': {
       try {
-        const data = await fetchJSON<SolveResponse>('/api/solve?expr=' + encodeURIComponent(rest));
+        const data = await fetchJSON<SolveResponse>(API_BASE + '/solve?expr=' + encodeURIComponent(rest));
         addLine(data.solution, 'result');
       } catch (e: unknown) {
         addLine('Error: ' + (e instanceof Error ? e.message : String(e)), 'error');
@@ -144,7 +148,7 @@ async function handleCommand(cmd: string): Promise<void> {
 
     case 'solveq': {
       try {
-        const data = await fetchJSON<SolveResponse>('/api/solveq?expr=' + encodeURIComponent(rest));
+        const data = await fetchJSON<SolveResponse>(API_BASE + '/solveq?expr=' + encodeURIComponent(rest));
         addLine(data.solution, 'result');
       } catch (e: unknown) {
         addLine('Error: ' + (e instanceof Error ? e.message : String(e)), 'error');
@@ -154,7 +158,7 @@ async function handleCommand(cmd: string): Promise<void> {
 
     case 'solvec': {
       try {
-        const data = await fetchJSON<SolveResponse>('/api/solvec?expr=' + encodeURIComponent(rest));
+        const data = await fetchJSON<SolveResponse>(API_BASE + '/solvec?expr=' + encodeURIComponent(rest));
         addLine(data.solution, 'result');
       } catch (e: unknown) {
         addLine('Error: ' + (e instanceof Error ? e.message : String(e)), 'error');
@@ -169,7 +173,7 @@ async function handleCommand(cmd: string): Promise<void> {
       const toVal = match![3] || '';
       try {
         const svg = await fetchText(
-          '/api/graph?expr=' + encodeURIComponent(exprStr)
+          API_BASE + '/graph?expr=' + encodeURIComponent(exprStr)
           + '&from=' + encodeURIComponent(fromVal)
           + '&to=' + encodeURIComponent(toVal)
         );
@@ -190,7 +194,7 @@ async function handleCommand(cmd: string): Promise<void> {
       const yMin = args[5] || '';
       const yMax = args[6] || '';
       try {
-        let url = '/api/mandelbrot?width=' + width + '&height=' + height + '&iter=' + iter;
+        let url = API_BASE + '/mandelbrot?width=' + width + '&height=' + height + '&iter=' + iter;
         if (xMin) url += '&xMin=' + xMin;
         if (xMax) url += '&xMax=' + xMax;
         if (yMin) url += '&yMin=' + yMin;
@@ -215,7 +219,7 @@ async function handleCommand(cmd: string): Promise<void> {
       const yMin = args[7] || '';
       const yMax = args[8] || '';
       try {
-        let url = '/api/julia?cx=' + cx + '&cy=' + cy + '&width=' + width + '&height=' + height + '&iter=' + iter;
+        let url = API_BASE + '/julia?cx=' + cx + '&cy=' + cy + '&width=' + width + '&height=' + height + '&iter=' + iter;
         if (xMin) url += '&xMin=' + xMin;
         if (xMax) url += '&xMax=' + xMax;
         if (yMin) url += '&yMin=' + yMin;
@@ -238,7 +242,7 @@ async function handleCommand(cmd: string): Promise<void> {
       const yMin = args[5] || '';
       const yMax = args[6] || '';
       try {
-        let url = '/api/burningship?width=' + width + '&height=' + height + '&iter=' + iter;
+        let url = API_BASE + '/burningship?width=' + width + '&height=' + height + '&iter=' + iter;
         if (xMin) url += '&xMin=' + xMin;
         if (xMax) url += '&xMax=' + xMax;
         if (yMin) url += '&yMin=' + yMin;

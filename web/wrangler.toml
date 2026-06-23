@@ -1,0 +1,10 @@
+name = "integra"
+compatibility_date = "2025-01-01"
+
+pages_build_output_dir = "."
+
+[env.production]
+# Set INTEGRA_API_BASE in Cloudflare Pages dashboard environment variables
+# to point to your backend server, e.g. "https://api.integra.example.com"
+# Leave empty for same-origin serving.
+# INTEGRA_API_BASE = "https://api.example.com"
