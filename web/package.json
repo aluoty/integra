@@ -5,12 +5,9 @@
   "description": "Integra web frontend — REPL calculator with calculus, fractals, and graphing",
   "scripts": {
     "build": "tsc",
-    "pages:dev": "wrangler pages dev .",
-    "pages:deploy": "npm install && npm run build && npx wrangler pages deploy .",
-    "cf-typegen": "wrangler types"
+    "pages:dev": "npx wrangler pages dev ."
   },
   "devDependencies": {
-    "typescript": "^6.0.3",
-    "wrangler": "^4.0.0"
+    "typescript": "^6.0.3"
   }
 }

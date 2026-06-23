@@ -1,12 +1,12 @@
 name = "integra"
 compatibility_date = "2025-01-01"
 
-pages_build_output_dir = "."
+# Cloudflare Pages (GitHub integration) → Build settings:
+#   Build command:     cd web && npm install && npm run build
+#   Build output dir:  web
+#   Root directory:    (leave blank — repo root)
 
-# Cloudflare Pages dashboard → Build settings:
-#   Build command: cd web && npm run pages:deploy
-#   Build output:  web
-#   Root directory: (leave blank — repo root)
-#
-# Environment variables (set in dashboard):
+# Environment variables (set in Cloudflare dashboard):
 #   INTEGRA_API_BASE = ""   (empty = same-origin; set to your backend URL if separate)
+
+# Use _redirects for API proxying instead of wrangler.
