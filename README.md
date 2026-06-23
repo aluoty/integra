@@ -6,11 +6,14 @@ fractals, calculus, and algebra solving — compiled to WASM for the web.
 ## Quick start
 
 ```bash
-cd wasm && wasm-pack build --target web --release
-cd ../web && npm run build
+./build.sh
 ```
 
 Serve `dist/` or run `npm run dev` in `web/`.
+
+> The `build.sh` script handles Rust installation, WASM target, `wasm-bindgen-cli`,
+> and the NixOS linker workaround automatically. For Cloudflare Pages, set the
+> build command to `./build.sh` and publish directory to `dist/`.
 
 ## Features
 
