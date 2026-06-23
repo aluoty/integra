@@ -1,8 +1,0 @@
-# Cloudflare Pages redirects
-#
-# Proxy /api/* to a backend server. Uncomment and set your backend URL:
-# /api/*  https://your-backend.example.com/api/:splat  200
-#
-# Without a backend, the calculator works client-side.
-# Advanced features (derivatives, integrals, fractals, solving, graphing)
-# display a message asking you to start the backend or set INTEGRA_API_BASE.

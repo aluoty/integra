@@ -4,8 +4,7 @@
   "private": true,
   "description": "Integra web frontend — REPL calculator with calculus, fractals, and graphing",
   "scripts": {
-    "build": "tsc",
-    "pages:dev": "npx wrangler pages dev ."
+    "build": "tsc"
   },
   "devDependencies": {
     "typescript": "^6.0.3"
