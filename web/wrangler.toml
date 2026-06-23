@@ -3,8 +3,10 @@ compatibility_date = "2025-01-01"
 
 pages_build_output_dir = "."
 
-[env.production]
-# Set INTEGRA_API_BASE in Cloudflare Pages dashboard environment variables
-# to point to your backend server, e.g. "https://api.integra.example.com"
-# Leave empty for same-origin serving.
-# INTEGRA_API_BASE = "https://api.example.com"
+# Cloudflare Pages dashboard → Build settings:
+#   Build command: cd web && npm run pages:deploy
+#   Build output:  web
+#   Root directory: (leave blank — repo root)
+#
+# Environment variables (set in dashboard):
+#   INTEGRA_API_BASE = ""   (empty = same-origin; set to your backend URL if separate)
