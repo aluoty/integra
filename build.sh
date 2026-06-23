@@ -1,11 +1,31 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-export PATH="$HOME/.cargo/bin:$PATH"
 cd "$(dirname "$0")"
 
+# Install Rust if not present
+if ! command -v cargo &>/dev/null; then
+  echo "Installing Rust..."
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+  source "$HOME/.cargo/env"
+fi
+
+export PATH="$HOME/.cargo/bin:$PATH"
+
+# Add WASM target (skip if using NixOS system rust which handles this differently)
+if command -v rustup &>/dev/null; then
+  rustup target add wasm32-unknown-unknown --toolchain stable
+fi
+
+# Install wasm-bindgen-cli if not present
+if ! command -v wasm-bindgen &>/dev/null; then
+  echo "Installing wasm-bindgen-cli..."
+  cargo install wasm-bindgen-cli --locked
+fi
+
 CARGO_CFG=()
-if [ -f /nix/store/yhmi70ln28n1j6wn82h61b8r8q4g562i-rustc-1.95.0/bin/rustc ]; then
+# NixOS needs a custom wasm-ld wrapper
+if [ -d /nix/store ]; then
   BOOTSTRAP_LD="/nix/store/ig3dxi9sbg0jnkid4s673mnz4kkbfwa4-rustc-bootstrap-1.95.0/lib/rustlib/x86_64-unknown-linux-gnu/bin/rust-lld"
   if [ -f "$BOOTSTRAP_LD" ]; then
     ln -sf "$BOOTSTRAP_LD" /tmp/wasm-ld
