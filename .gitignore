@@ -1,13 +1,11 @@
 dist/
 .astro-dist/
-dist-newstyle/
 .direnv/
 result
-integra-clone/
 
-integra-wasm/target/
-integra-wasm/pkg/
-integra-wasm/Cargo.lock
+wasm/target/
+wasm/pkg/
+wasm/Cargo.lock
 
 web/node_modules/
 web/src/wasm/
