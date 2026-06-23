@@ -5,7 +5,9 @@ interface EvalResponse {
 
 interface DerivResponse {
   deriv: string;
+  result: string;
   expr: string;
+  at: string;
 }
 
 interface SolveResponse {
@@ -18,6 +20,15 @@ interface IntegralResponse {
   expr: string;
   from: string;
   to: string;
+}
+
+interface ExplainResponse {
+  text: string;
+  type: string;
+}
+
+interface AboutResponse {
+  text: string;
 }
 
 declare const INTEGRA_API_BASE: string | undefined;
@@ -80,16 +91,41 @@ async function handleCommand(cmd: string): Promise<void> {
   switch (command) {
     case 'help':
       addLine('Commands:', 'info');
-      addLine('  :help                    Show this help', 'info');
-      addLine('  :deriv <expr> [at <x>]   Derivative', 'info');
+      addLine('  :help                     Show this help', 'info');
+      addLine('  :about                    About Integra', 'info');
+      addLine('  :clear                    Clear output', 'info');
+      addLine('  :deriv <expr> [at <x>]    Derivative', 'info');
+      addLine('  :deriv2 <expr> at <x>     Numerical 2nd derivative', 'info');
+      addLine('  :derivn <expr> order <n> at <x>', 'info');
       addLine('  :integral <expr> [from <a> to <b>]', 'info');
-      addLine('  :solve <expr>            Solve linear equation', 'info');
-      addLine('  :solveq <expr>           Solve quadratic equation', 'info');
-      addLine('  :graph <expr> [from <a> to <b>]', 'info');
+      addLine('  :limit <expr> as <x>      Numerical limit', 'info');
+      addLine('  :taylor <expr> at <a> order <n>', 'info');
+      addLine('  :solve <expr>             Solve linear equation', 'info');
+      addLine('  :solveq <expr>            Solve quadratic equation', 'info');
+      addLine('  :solvec <expr>            Solve cubic equation', 'info');
+      addLine('  :graph <expr> [from <a> to <b>] [yfrom <ya> to <yb>]', 'info');
       addLine('  :mandelbrot [w h iter xmin xmax ymin ymax]', 'info');
       addLine('  :julia <cx> <cy> [w h iter xmin xmax ymin ymax]', 'info');
-      addLine('  :solvec <expr>           Solve cubic equation', 'info');
       addLine('  :burningship [w h iter xmin xmax ymin ymax]', 'info');
+      addLine('  :explain deriv|integral|solve <expr>', 'info');
+      addLine('  :quit                     (close the tab)', 'info');
+      break;
+
+    case 'about':
+      try {
+        const data = await fetchJSON<AboutResponse>(API_BASE + '/about');
+        addLine(data.text, 'info');
+      } catch (e: unknown) {
+        addLine('Error: ' + (e instanceof Error ? e.message : String(e)), 'error');
+      }
+      break;
+
+    case 'clear':
+      output.innerHTML = '';
+      break;
+
+    case 'quit':
+      addLine('Close this tab to quit.', 'info');
       break;
 
     case 'deriv': {
@@ -102,12 +138,55 @@ async function handleCommand(cmd: string): Promise<void> {
         exprStr = rest;
       }
       try {
-        const data = await fetchJSON<DerivResponse>(API_BASE + '/deriv?expr=' + encodeURIComponent(exprStr));
+        let url = API_BASE + '/deriv?expr=' + encodeURIComponent(exprStr);
+        if (atStr) url += '&at=' + encodeURIComponent(atStr);
+        const data = await fetchJSON<DerivResponse>(url);
         addLine("f'(x) = " + data.deriv, 'deriv');
-        if (atStr) {
-          const derivAtRes = await fetchJSON<EvalResponse>(API_BASE + '/eval?expr=(' + data.deriv + ')');
-          addLine("f'(" + atStr + ') = ' + derivAtRes.result, 'result');
+        if (data.result) {
+          addLine("f'(" + atStr + ') = ' + data.result, 'result');
         }
+      } catch (e: unknown) {
+        addLine('Error: ' + (e instanceof Error ? e.message : String(e)), 'error');
+      }
+      break;
+    }
+
+    case 'deriv2': {
+      const match = rest.match(/^(.*?)\s+at\s+(.+)$/);
+      if (!match) {
+        addLine('Usage: :deriv2 <expr> at <x>', 'error');
+        break;
+      }
+      const exprStr = match[1];
+      const atStr = match[2];
+      try {
+        const data = await fetchJSON<EvalResponse>(
+          API_BASE + '/deriv2?expr=' + encodeURIComponent(exprStr)
+          + '&at=' + encodeURIComponent(atStr)
+        );
+        addLine("f''(" + atStr + ') = ' + data.result, 'result');
+      } catch (e: unknown) {
+        addLine('Error: ' + (e instanceof Error ? e.message : String(e)), 'error');
+      }
+      break;
+    }
+
+    case 'derivn': {
+      const orderMatch = rest.match(/^(.*?)\s+order\s+(.+?)\s+at\s+(.+)$/);
+      if (!orderMatch) {
+        addLine('Usage: :derivn <expr> order <n> at <x>', 'error');
+        break;
+      }
+      const exprStr = orderMatch[1];
+      const orderStr = orderMatch[2];
+      const atStr = orderMatch[3];
+      try {
+        const data = await fetchJSON<EvalResponse>(
+          API_BASE + '/derivn?expr=' + encodeURIComponent(exprStr)
+          + '&order=' + encodeURIComponent(orderStr)
+          + '&at=' + encodeURIComponent(atStr)
+        );
+        addLine("f^(" + orderStr + ")(" + atStr + ') = ' + data.result, 'result');
       } catch (e: unknown) {
         addLine('Error: ' + (e instanceof Error ? e.message : String(e)), 'error');
       }
@@ -131,7 +210,56 @@ async function handleCommand(cmd: string): Promise<void> {
           addLine('Error: ' + (e instanceof Error ? e.message : String(e)), 'error');
         }
       } else {
-        addLine('Usage: :integral <expr> from <a> to <b>', 'error');
+        try {
+          const data = await fetchJSON<EvalResponse>(
+            API_BASE + '/antideriv?expr=' + encodeURIComponent(rest)
+          );
+          addLine('\u222B f(x) dx = ' + data.result, 'result');
+        } catch (e: unknown) {
+          addLine('Error: ' + (e instanceof Error ? e.message : String(e)), 'error');
+        }
+      }
+      break;
+    }
+
+    case 'limit': {
+      const match = rest.match(/^(.*?)\s+as\s+(.+)$/);
+      if (!match) {
+        addLine('Usage: :limit <expr> as <x>', 'error');
+        break;
+      }
+      const exprStr = match[1];
+      const asStr = match[2];
+      try {
+        const data = await fetchJSON<EvalResponse>(
+          API_BASE + '/limit?expr=' + encodeURIComponent(exprStr)
+          + '&as=' + encodeURIComponent(asStr)
+        );
+        addLine('lim f(x) as x \u2192 ' + asStr + ' = ' + data.result, 'result');
+      } catch (e: unknown) {
+        addLine('Error: ' + (e instanceof Error ? e.message : String(e)), 'error');
+      }
+      break;
+    }
+
+    case 'taylor': {
+      const match = rest.match(/^(.*?)\s+at\s+(.+?)\s+order\s+(.+)$/);
+      if (!match) {
+        addLine('Usage: :taylor <expr> at <a> order <n>', 'error');
+        break;
+      }
+      const exprStr = match[1];
+      const atStr = match[2];
+      const orderStr = match[3];
+      try {
+        const data = await fetchJSON<EvalResponse>(
+          API_BASE + '/taylor?expr=' + encodeURIComponent(exprStr)
+          + '&at=' + encodeURIComponent(atStr)
+          + '&order=' + encodeURIComponent(orderStr)
+        );
+        addLine('T_' + orderStr + '(0) \u2248 ' + data.result, 'result');
+      } catch (e: unknown) {
+        addLine('Error: ' + (e instanceof Error ? e.message : String(e)), 'error');
       }
       break;
     }
@@ -166,17 +294,40 @@ async function handleCommand(cmd: string): Promise<void> {
       break;
     }
 
+    case 'explain': {
+      const explainMatch = rest.match(/^(deriv|integral|solve)\s+(.+)$/);
+      if (!explainMatch) {
+        addLine('Usage: :explain deriv|integral|solve <expr>', 'error');
+        break;
+      }
+      const explainType = explainMatch[1];
+      const exprStr = explainMatch[2];
+      try {
+        const data = await fetchJSON<ExplainResponse>(
+          API_BASE + '/explain?type=' + encodeURIComponent(explainType)
+          + '&expr=' + encodeURIComponent(exprStr)
+        );
+        addLine(data.text, 'info');
+      } catch (e: unknown) {
+        addLine('Error: ' + (e instanceof Error ? e.message : String(e)), 'error');
+      }
+      break;
+    }
+
     case 'graph': {
-      const match = rest.match(/^(.*?)(?:\s+from\s+(.+?)\s+to\s+(.+))?$/);
+      const match = rest.match(/^(.*?)(?:\s+from\s+(.+?)\s+to\s+(.+?))?(?:\s+yfrom\s+(.+?)\s+to\s+(.+))?$/);
       const exprStr = match![1];
       const fromVal = match![2] || '';
       const toVal = match![3] || '';
+      const yMinVal = match![4] || '';
+      const yMaxVal = match![5] || '';
       try {
-        const svg = await fetchText(
-          API_BASE + '/graph?expr=' + encodeURIComponent(exprStr)
-          + '&from=' + encodeURIComponent(fromVal)
-          + '&to=' + encodeURIComponent(toVal)
-        );
+        let url = API_BASE + '/graph?expr=' + encodeURIComponent(exprStr);
+        if (fromVal) url += '&from=' + encodeURIComponent(fromVal);
+        if (toVal) url += '&to=' + encodeURIComponent(toVal);
+        if (yMinVal) url += '&yMin=' + encodeURIComponent(yMinVal);
+        if (yMaxVal) url += '&yMax=' + encodeURIComponent(yMaxVal);
+        const svg = await fetchText(url);
         addHTML('<div class="svg-container">' + svg + '</div>');
       } catch (e: unknown) {
         addLine('Error: ' + (e instanceof Error ? e.message : String(e)), 'error');
@@ -186,8 +337,8 @@ async function handleCommand(cmd: string): Promise<void> {
 
     case 'mandelbrot': {
       const args = rest.split(/\s+/);
-      const width = args[0] || '200';
-      const height = args[1] || '200';
+      const width = args[0] || '400';
+      const height = args[1] || '400';
       const iter = args[2] || '100';
       const xMin = args[3] || '';
       const xMax = args[4] || '';
@@ -211,8 +362,8 @@ async function handleCommand(cmd: string): Promise<void> {
       const args = rest.split(/\s+/);
       const cx = args[0] || '-0.7';
       const cy = args[1] || '0.27015';
-      const width = args[2] || '200';
-      const height = args[3] || '200';
+      const width = args[2] || '400';
+      const height = args[3] || '400';
       const iter = args[4] || '100';
       const xMin = args[5] || '';
       const xMax = args[6] || '';
@@ -234,8 +385,8 @@ async function handleCommand(cmd: string): Promise<void> {
 
     case 'burningship': {
       const args = rest.split(/\s+/);
-      const width = args[0] || '200';
-      const height = args[1] || '200';
+      const width = args[0] || '400';
+      const height = args[1] || '400';
       const iter = args[2] || '100';
       const xMin = args[3] || '';
       const xMax = args[4] || '';

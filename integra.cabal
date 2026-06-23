@@ -25,6 +25,7 @@ library
         Integra.Special
         Integra.Derive
         Integra.Graph
+        Integra.Antiderivative
     build-depends:    base ^>=4.20.2.0
     default-language: Haskell2010
 
