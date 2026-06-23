@@ -1,7 +1,8 @@
-# Cloudflare Pages redirects/proxying
+# Cloudflare Pages redirects
 #
-# To proxy API requests to a backend server, uncomment and edit:
+# Proxy /api/* to a backend server. Uncomment and set your backend URL:
 # /api/*  https://your-backend.example.com/api/:splat  200
 #
-# SPA fallback (not needed for single-page app, but kept for reference):
-# /*  /index.html  200
+# Without a backend, the calculator works client-side.
+# Advanced features (derivatives, integrals, fractals, solving, graphing)
+# display a message asking you to start the backend or set INTEGRA_API_BASE.
