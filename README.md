@@ -1,15 +1,16 @@
 # integra
 
-A terminal-based REPL calculator with complex numbers, symbolic differentiation,
-SVG graphing, fractals, calculus, and algebra solving — built in Haskell.
+A REPL calculator with complex numbers, symbolic differentiation, SVG graphing,
+fractals, calculus, and algebra solving — compiled to WASM for the web.
 
 ## Quick start
 
 ```bash
-cabal run
+cd wasm && wasm-pack build --target web --release
+cd ../web && npm run build
 ```
 
-You'll see the `λ` prompt. Type `:help` for all commands.
+Serve `dist/` or run `npm run dev` in `web/`.
 
 ## Features
 
@@ -35,8 +36,6 @@ You'll see the `λ` prompt. Type `:help` for all commands.
 | Constants              | `pi`, `tau`, `e`, `phi`, `i`                                          |
 | Variables              | `x`, `ans` (last computed result)                                     |
 
-Operator precedence: `==` `!=` `>` `>=` `<` `<=` (lowest) > `+` `-` > `*` `/` > `^` (right-assoc) > implicit multiplication.
-
 ### Commands (all start with `:`)
 
 | Command                                                        | Description                               |
@@ -52,63 +51,22 @@ Operator precedence: `==` `!=` `>` `>=` `<` `<=` (lowest) > `+` `-` > `*` `/` > 
 | `:mandelbrot [w h iter]`                                       | Generate Mandelbrot set SVG (default 200×200×100) |
 | `:julia <re> <im> [w h iter]`                                  | Generate Julia set SVG for parameter c    |
 | `:explain deriv <expr> [at <x>]`                               | Show symbolic derivative steps            |
-| `:explain integral <expr>`                                     | Show antiderivative rules                 |
-| `:explain solve <expr>`                                        | Show solving steps                        |
 
 ### Calculus
 
 - **Derivative**: symbolic differentiation with chain/product/quotient rules
-- **Integral**: Simpson's adaptive quadrature; supports `inf`, `-inf` bounds (mapped to ±1e6)
+- **Integral**: Simpson's adaptive quadrature; supports `inf`, `-inf` bounds
 - **Antiderivative**: reverses derivative rules for simple expressions
-
-### Complex numbers
-
-- `i` is the imaginary unit. All arithmetic, trig, hyperbolic, log, exp, sqrt,
-  and power operations work on `Complex Double`.
-- Display: `3+4i`, `5`, `-2i`, `∞`, `undefined`.
-- The solver returns complex roots automatically.
-
-### Step-by-step explanations
-
-- `:explain deriv <expr>` — symbolic differentiation with rule breakdown
-- `:explain integral <expr>` — antiderivative rules shown step by step
-- `:explain solve <expr>` — linear equation solving steps
 
 ### SVG Graphing
 
-- Function plots: `:graph sin(x) from -5 to 5` (auto-scaled y-axis, grid lines, axis labels)
-- Mandelbrot set: `:mandelbrot 200 200 100` (smooth coloring, HSL palette)
+- Function plots: `:graph sin(x) from -5 to 5`
+- Mandelbrot set: `:mandelbrot 200 200 100`
 - Julia sets: `:julia -0.7 0.27 200 200 100`
-- SVGs are saved to `/tmp/` and opened in your default browser.
+- SVGs render inline in the browser
 
-### Multiple solutions
+## Project layout
 
-- `8^(1/3)` shows all 3 cube roots.
-- `(-1)^(1/2)` shows both `i` and `-i`.
-- Works for any constant base `a^(1/n)` with integer `n > 1`.
-
-### REPL features
-
-- Colored output (ANSI terminal)
-- Line editing with history (up/down arrows) via `haskeline`
-- `ans` variable stores the last result
-- `niceShow` formatting — `5.0` → `5`, `NaN` → `undefined`, `Infinity` → `∞`
-
-### Comparison operators
-
-- `3 > 2` returns `1`, `1 < 0` returns `0`
-- `1 == 1` returns `1`, `1 != 2` returns `1`
-- Comparisons compare the real part only (imaginary part ignored)
-
-## Build
-
-```bash
-cabal build
-cabal run
-```
-
-## Clean
-
-```bash
-cabal clean
-```
+- `wasm/` — Rust crate compiled to WASM
+- `web/` — Astro frontend with TypeScript REPL
+- `dist/` — built static output
